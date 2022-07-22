@@ -17,7 +17,7 @@ public class FileEntity {
 
     @Lob
     @Basic(fetch = FetchType.LAZY)
-    @Column(name = "data", columnDefinition = "BLOB")
+    @Column(name = "data")
     private byte[] data;
 
     public FileEntity() {
