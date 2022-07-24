@@ -1,14 +1,16 @@
-package com.jackdo.storageserver.controller;
+package com.jackdo.storage.controller;
 
-import com.jackdo.storageserver.entity.FileEntity;
-import com.jackdo.storageserver.message.ResponseFile;
-import com.jackdo.storageserver.message.ResponseMessage;
-import com.jackdo.storageserver.service.FileStorageServiceImpl;
+import com.jackdo.storage.entity.FileEntity;
+import com.jackdo.storage.entity.FolderEntity;
+import com.jackdo.storage.message.ResponseFile;
+import com.jackdo.storage.message.ResponseMessage;
+import com.jackdo.storage.repo.FileRepo;
+import com.jackdo.storage.repo.FolderRepo;
+import com.jackdo.storage.service.FileServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -17,42 +19,37 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
-@Controller
+@RestController
+@RequestMapping("/api/file")
 public class FileController {
-    FileStorageServiceImpl fileStorageService;
+    FileServiceImpl fileStorageService;
+    FolderRepo folderRepo;
+    FileRepo fileRepo;
 
     @Autowired
-    public FileController(FileStorageServiceImpl fileStorageService) {
+    public FileController(FileServiceImpl fileStorageService, FolderRepo folderRepo, FileRepo fileRepo) {
         this.fileStorageService = fileStorageService;
+        this.folderRepo = folderRepo;
+        this.fileRepo = fileRepo;
     }
 
-    @GetMapping("/")
-    public String index() {
-        return "index";
-    }
-
-    @GetMapping("/auth")
-    public ResponseEntity<Object> auth(HttpServletRequest req) {
-        boolean auth = (boolean) req.getAttribute("auth");
-        if (auth) {
-            return ResponseEntity.ok().body(null);
-        } else {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
-        }
-    }
-
-    @PostMapping("/upload")
+    @PostMapping("/{folderId}")
     public ResponseEntity<ResponseMessage> uploadFile(@RequestParam("files") List<MultipartFile> files,
-                                                      HttpServletRequest req) {
+                                                      HttpServletRequest req, @PathVariable String folderId) {
         boolean auth = (boolean) req.getAttribute("auth");
         if (!auth) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
         } else {
+            FolderEntity parentFolder = this.folderRepo.findById(UUID.fromString(folderId)).orElse(null);
+            if (parentFolder == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+            }
             String message = "";
             try {
-                fileStorageService.storeFiles(files);
+                fileStorageService.storeFiles(files, parentFolder.getId().toString());
                 message = "Uploaded the files successfully";
                 return ResponseEntity.status(HttpStatus.OK).body(new ResponseMessage(message));
             } catch (Exception e) {
@@ -62,16 +59,20 @@ public class FileController {
         }
     }
 
-    @GetMapping("/files")
-    public ResponseEntity<List<ResponseFile>> getListFiles(HttpServletRequest req) {
+    @GetMapping("/{parentFolderId}")
+    public ResponseEntity<List<ResponseFile>> getAllFiles(@PathVariable String parentFolderId, HttpServletRequest req) {
         boolean auth = (boolean) req.getAttribute("auth");
         if (!auth) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
         } else {
-            List<ResponseFile> files = fileStorageService.getAllFiles().map(dbFile -> {
+            FolderEntity parentFolder = this.folderRepo.findById(UUID.fromString(parentFolderId)).orElse(null);
+            if (parentFolder == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+            }
+            List<ResponseFile> files = this.fileRepo.findAllByParentFolder(parentFolder).stream().map(dbFile -> {
                 String fileDownloadUri = ServletUriComponentsBuilder
                         .fromCurrentContextPath()
-                        .path("/file/")
+                        .path("/api/file/download/")
                         .path(dbFile.getId().toString())
                         .toUriString();
                 return new ResponseFile(dbFile.getName(), fileDownloadUri, dbFile.getType(), dbFile.getId().toString(), dbFile.getData().length);
@@ -80,11 +81,10 @@ public class FileController {
         }
     }
 
-    @GetMapping("/file/{id}")
+    @GetMapping("/download/{id}")
     public ResponseEntity<byte[]> getFileByName(@PathVariable String id, HttpServletRequest req)
             throws SQLException, IOException {
         boolean auth = (boolean) req.getAttribute("auth");
-        System.out.println(auth);
         if (!auth) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
         } else {
@@ -99,7 +99,7 @@ public class FileController {
         }
     }
 
-    @DeleteMapping("/file/{id}")
+    @DeleteMapping("/{id}")
     public ResponseEntity<Object> deleteFile(@PathVariable String id, HttpServletRequest req) {
         boolean auth = (boolean) req.getAttribute("auth");
         if (!auth) {

@@ -1,4 +1,4 @@
-package com.jackdo.storageserver.entity;
+package com.jackdo.storage.entity;
 
 import javax.persistence.*;
 import java.util.UUID;
@@ -20,13 +20,18 @@ public class FileEntity {
     @Column(name = "data")
     private byte[] data;
 
+    @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JoinColumn(name = "folderId")
+    private FolderEntity parentFolder;
+
     public FileEntity() {
     }
 
-    public FileEntity(String name, String type, byte[] data) {
+    public FileEntity(String name, String type, byte[] data, FolderEntity parentFolder) {
         this.name = name;
         this.type = type;
         this.data = data;
+        this.parentFolder = parentFolder;
     }
 
     public UUID getId() {
@@ -55,5 +60,13 @@ public class FileEntity {
 
     public void setData(byte[] data) {
         this.data = data;
+    }
+
+    public FolderEntity getParentFolder() {
+        return parentFolder;
+    }
+
+    public void setParentFolder(FolderEntity parentFolder) {
+        this.parentFolder = parentFolder;
     }
 }

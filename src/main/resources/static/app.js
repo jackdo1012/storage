@@ -1,3 +1,19 @@
+class Stack {
+    items = [];
+    push(item) {
+        this.items.push(item);
+    }
+    pop() {
+        return this.items.pop();
+    }
+    peek() {
+        return this.items[this.items.length - 1];
+    }
+    length() {
+        return this.items.length;
+    }
+}
+
 const app = document.querySelector(".app");
 const filesElement = document.querySelector(".files");
 const uploadInput = document.querySelector(".upload .file-upload");
@@ -5,8 +21,10 @@ const uploadContainer = document.querySelector(".upload");
 const uploadButton = document.querySelector(".upload-button");
 const loginLogoutElement = document.querySelector(".loginLogout");
 const changeModeElement = document.querySelector(".change-mode");
+const backButton = document.querySelector(".back-btn");
 let currentMode = "view";
 let files = [];
+let folders = [];
 
 const fileIconMap = {
     "7z": "7zip",
@@ -46,14 +64,35 @@ const fileIconMap = {
     zip: "zip",
 };
 (async () => {
+    const folderPath = new Stack();
+    folderPath.push(
+        await fetch(`/api/folder/root`, {
+            credentials: "include",
+        }).then((res) => res.json()),
+    );
     const materialIcon = (name) => {
         const icon = document.createElement("span");
         icon.classList.add("material-icons");
         icon.innerHTML = name;
         return icon;
     };
-    const getFiles = async () => {
-        files = await fetch(`/files`, {
+
+    backButton.onclick = async () => {
+        folderPath.pop();
+        await getFilesAndFolders();
+        renderFilesAndFolders();
+    };
+
+    const getFilesAndFolders = async () => {
+        files = await fetch(`/api/file/${folderPath.peek().id}`, {
+            credentials: "include",
+        }).then((res) => {
+            if (res.status === 401) {
+                return [];
+            }
+            return res.json();
+        });
+        folders = await fetch(`/api/folder/${folderPath.peek().id}`, {
             credentials: "include",
         }).then((res) => {
             if (res.status === 401) {
@@ -62,10 +101,55 @@ const fileIconMap = {
             return res.json();
         });
     };
-    const renderFiles = () => {
+    const renderFilesAndFolders = () => {
+        if (folderPath.length() <= 1) {
+            backButton.disabled = true;
+        } else {
+            backButton.disabled = false;
+        }
         while (filesElement.firstChild) {
             filesElement.removeChild(filesElement.firstChild);
         }
+        folders.forEach((folder) => {
+            // add to DOM
+            const folderElement = document.createElement("div");
+            folderElement.classList.add("file");
+            folderElement.onclick = async () => {
+                if (currentMode === "view") {
+                    folderPath.push(folder);
+                    await getFilesAndFolders();
+                    renderFilesAndFolders();
+                } else {
+                    await fetch(`/api/folder/${folder.id}`, {
+                        credentials: "include",
+                        method: "DELETE",
+                    });
+                    await getFilesAndFolders();
+                    renderFilesAndFolders();
+                }
+            };
+            {
+                const imageElement = document.createElement("img");
+                imageElement.src = `/icon/folder.png`;
+                folderElement.appendChild(imageElement);
+            }
+            {
+                const fileNameElement = document.createElement("p");
+                fileNameElement.innerHTML = folder.name;
+                folderElement.appendChild(fileNameElement);
+            }
+            {
+                if (currentMode === "delete") {
+                    const overlay = document.createElement("div");
+                    overlay.classList.add("overlay");
+                    const deleteBtn = materialIcon("delete");
+                    deleteBtn.classList.add("delete-btn");
+                    folderElement.appendChild(overlay);
+                    folderElement.appendChild(deleteBtn);
+                }
+            }
+            filesElement.appendChild(folderElement);
+        });
         files.forEach((file) => {
             const fileExtension = file.name.split(".").pop().toLowerCase();
             const fileIcon = fileIconMap[fileExtension] || "file";
@@ -77,12 +161,12 @@ const fileIconMap = {
                     window.open(file.url, "_blank");
                 } else {
                     console.log(file);
-                    await fetch(`/file/${file.id}`, {
+                    await fetch(`/api/file/${file.id}`, {
                         credentials: "include",
                         method: "DELETE",
                     });
-                    await getFiles();
-                    renderFiles();
+                    await getFilesAndFolders();
+                    renderFilesAndFolders();
                 }
             };
             {
@@ -109,7 +193,7 @@ const fileIconMap = {
         });
     };
     const authRelateRender = async () => {
-        const auth = await fetch(`/auth`, {
+        const auth = await fetch(`/api/auth`, {
             credentials: "include",
         }).then((res) => {
             if (res.status === 401) {
@@ -125,6 +209,7 @@ const fileIconMap = {
         switch (auth) {
             case true: {
                 const logOutButton = document.createElement("button");
+                logOutButton.classList.add("logout-btn");
                 logOutButton.innerHTML = "Logout";
                 logOutButton.onclick = () => {
                     document.cookie = "token=";
@@ -145,6 +230,7 @@ const fileIconMap = {
                 loginLogoutElement.appendChild(input);
                 const loginButton = document.createElement("button");
                 loginButton.innerHTML = "Login";
+                loginButton.classList.add("login-btn");
                 loginButton.onclick = async () => {
                     document.cookie = "token=" + input.value;
                     loginButton.disabled = true;
@@ -161,13 +247,13 @@ const fileIconMap = {
         }
         if (auth) {
             let uploadFileList = [];
+            const uploadFileDiv = document.createElement("div");
             const uploadFile = document.createElement("input");
             uploadFile.type = "file";
             uploadFile.classList.add("file-upload");
             uploadFile.multiple = true;
             uploadFile.onchange = (event) => {
                 uploadFileList = [...event.target.files];
-                console.log(uploadFileList);
             };
 
             const uploadBtn = document.createElement("button");
@@ -182,20 +268,47 @@ const fileIconMap = {
                 uploadFileList.forEach((file) => {
                     formData.append("files", file);
                 });
-                await fetch(`/upload`, {
+                await fetch(`/api/file/${folderPath.peek().id}`, {
                     method: "POST",
                     credentials: "include",
                     body: formData,
                 });
-                await getFiles();
-                renderFiles();
+                await getFilesAndFolders();
+                renderFilesAndFolders();
                 uploadFileList = [];
                 uploadFile.value = [];
                 uploadBtn.disabled = false;
             };
+            uploadFileDiv.appendChild(uploadFile);
+            uploadFileDiv.appendChild(uploadBtn);
 
-            uploadContainer.appendChild(uploadFile);
-            uploadContainer.appendChild(uploadBtn);
+            const newFolderDiv = document.createElement("div");
+            const newFolderInput = document.createElement("input");
+            newFolderInput.type = "text";
+            newFolderInput.classList.add("new-folder-input");
+            newFolderInput.placeholder = "New Folder";
+
+            const newFolderBtn = document.createElement("button");
+            newFolderBtn.classList.add("new-folder-btn");
+            newFolderBtn.innerHTML = "New Folder";
+            newFolderBtn.onclick = async () => {
+                newFolderBtn.disabled = true;
+                await fetch(`/api/folder/${folderPath.peek().id}`, {
+                    method: "POST",
+                    credentials: "include",
+                    body: newFolderInput.value,
+                });
+                await getFilesAndFolders();
+                renderFilesAndFolders();
+                newFolderInput.value = "";
+                newFolderBtn.disabled = false;
+            };
+
+            newFolderDiv.appendChild(newFolderInput);
+            newFolderDiv.appendChild(newFolderBtn);
+
+            uploadContainer.appendChild(newFolderDiv);
+            uploadContainer.appendChild(uploadFileDiv);
         }
 
         // change view or delete mode
@@ -218,7 +331,7 @@ const fileIconMap = {
                 } else {
                     changeModeElement.appendChild(materialIcon("delete"));
                 }
-                renderFiles();
+                renderFilesAndFolders();
             };
         } else {
             changeModeElement.style.display = "none";
@@ -228,8 +341,8 @@ const fileIconMap = {
 
     const reload = async () => {
         authRelateRender();
-        await getFiles();
-        renderFiles();
+        await getFilesAndFolders();
+        renderFilesAndFolders();
     };
     await reload();
 })();

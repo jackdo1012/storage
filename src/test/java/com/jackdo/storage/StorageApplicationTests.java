@@ -1,10 +1,10 @@
-package com.jackdo.storageserver;
+package com.jackdo.storage;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class StorageServerApplicationTests {
+class StorageApplicationTests {
 
     @Test
     void contextLoads() {

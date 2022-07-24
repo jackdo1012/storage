@@ -9,10 +9,10 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>com.jackdo</groupId>
-    <artifactId>storage-server</artifactId>
+    <artifactId>storage</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>storage-server</name>
-    <description>storage-server</description>
+    <name>storage</name>
+    <description>storage</description>
     <properties>
         <java.version>17</java.version>
         <maven.test.skip>true</maven.test.skip>

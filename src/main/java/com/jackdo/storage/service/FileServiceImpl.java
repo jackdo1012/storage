@@ -1,29 +1,30 @@
-package com.jackdo.storageserver.service;
+package com.jackdo.storage.service;
 
-import com.jackdo.storageserver.entity.FileEntity;
-import com.jackdo.storageserver.repo.FileRepo;
+import com.jackdo.storage.entity.FileEntity;
+import com.jackdo.storage.entity.FolderEntity;
+import com.jackdo.storage.repo.FileRepo;
+import com.jackdo.storage.repo.FolderRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Stream;
 
 @Service
-public class FileStorageServiceImpl implements FileStorageService {
+public class FileServiceImpl implements FileService {
     FileRepo fileRepo;
+    FolderRepo folderRepo;
 
     @Autowired
-    public FileStorageServiceImpl(FileRepo fileRepo) {
+    public FileServiceImpl(FileRepo fileRepo, FolderRepo folderRepo) {
         this.fileRepo = fileRepo;
+        this.folderRepo = folderRepo;
     }
 
-    private String getFileName(String initFilename, int initIndex) {
+    private String getFileName(String initFilename, int initIndex, FolderEntity parentFolder) {
         String fileName = initFilename;
         if (initIndex != 0) {
             int lastIndexOf = fileName.lastIndexOf(".");
@@ -32,22 +33,26 @@ public class FileStorageServiceImpl implements FileStorageService {
             }
             fileName = initFilename.replaceFirst("[.][^.]+$", "") + "-" + initIndex + fileName.substring(lastIndexOf);
         }
-        FileEntity checkIfNameExist = fileRepo.findByName(fileName);
+        FileEntity checkIfNameExist = fileRepo.findByNameAndParentFolder(fileName, parentFolder);
         if (checkIfNameExist == null) {
             return fileName;
         } else {
-            return getFileName(initFilename, initIndex + 1);
+            return getFileName(initFilename, initIndex + 1, parentFolder);
         }
     }
 
     @Override
-    public List<FileEntity> storeFiles(List<MultipartFile> files) throws IOException {
+    public List<FileEntity> storeFiles(List<MultipartFile> files, String folderId) throws IOException {
+        FolderEntity parentFolder = this.folderRepo.findById(UUID.fromString(folderId)).orElse(null);
+        if (parentFolder == null) {
+            return new ArrayList<FileEntity>();
+        }
         List<FileEntity> returnFiles = new ArrayList<FileEntity>();
         files.forEach(file -> {
-            String fileName = getFileName(StringUtils.cleanPath(Objects.requireNonNull(file.getOriginalFilename())), 0);
+            String fileName = getFileName(StringUtils.cleanPath(Objects.requireNonNull(file.getOriginalFilename())), 0, parentFolder);
             FileEntity fileEntity = null;
             try {
-                fileEntity = new FileEntity(fileName, file.getContentType(), file.getBytes());
+                fileEntity = new FileEntity(fileName, file.getContentType(), file.getBytes(), parentFolder);
                 returnFiles.add(fileRepo.save(fileEntity));
             } catch (IOException e) {
                 e.printStackTrace();
@@ -59,11 +64,6 @@ public class FileStorageServiceImpl implements FileStorageService {
     @Override
     public FileEntity getFile(String id) {
         return fileRepo.findById(UUID.fromString(id)).orElse(null);
-    }
-
-    @Override
-    public Stream<FileEntity> getAllFiles() {
-        return fileRepo.findAll().stream();
     }
 
     @Override

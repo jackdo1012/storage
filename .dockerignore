@@ -1,0 +1,10 @@
+target
+.idea
+HELP.md
+*.iws
+*.iml
+*.ipr
+*.jar
+out
+**/.DS_Store
+**/.env

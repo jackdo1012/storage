@@ -27,9 +27,23 @@
     cursor: pointer;
 }
 
+.upload .upload-button {
+    padding: 5px;
+    font-size: 1.05rem;
+    background-color: transparent;
+    border: 2px solid #ccc;
+    border-radius: 5px;
+}
+
 .files {
     display: grid;
-    grid-template-columns: repeat(var(--file-per-line), auto);
+    grid-template-columns: repeat(
+        var(--file-per-line),
+        calc(
+            (100vw - var(--gap) * calc(var(--file-per-line) + 1)) /
+                var(--file-per-line)
+        )
+    );
     gap: var(--gap);
     padding: var(--gap);
     user-select: none;

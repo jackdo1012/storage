@@ -1,4 +1,4 @@
-package com.jackdo.storageserver.message;
+package com.jackdo.storage.message;
 
 public class ResponseMessage {
     private String message;
