@@ -1,14 +1,18 @@
 class Stack {
     items = [];
+
     push(item) {
         this.items.push(item);
     }
+
     pop() {
         return this.items.pop();
     }
+
     peek() {
         return this.items[this.items.length - 1];
     }
+
     length() {
         return this.items.length;
     }
@@ -16,9 +20,7 @@ class Stack {
 
 const app = document.querySelector(".app");
 const filesElement = document.querySelector(".files");
-const uploadInput = document.querySelector(".upload .file-upload");
 const uploadContainer = document.querySelector(".upload");
-const uploadButton = document.querySelector(".upload-button");
 const loginLogoutElement = document.querySelector(".loginLogout");
 const changeModeElement = document.querySelector(".change-mode");
 const backButton = document.querySelector(".back-btn");
@@ -102,11 +104,7 @@ const fileIconMap = {
         });
     };
     const renderFilesAndFolders = () => {
-        if (folderPath.length() <= 1) {
-            backButton.disabled = true;
-        } else {
-            backButton.disabled = false;
-        }
+        backButton.disabled = folderPath.length() <= 1;
         while (filesElement.firstChild) {
             filesElement.removeChild(filesElement.firstChild);
         }
@@ -196,11 +194,7 @@ const fileIconMap = {
         const auth = await fetch(`/api/auth`, {
             credentials: "include",
         }).then((res) => {
-            if (res.status === 401) {
-                return false;
-            } else {
-                return true;
-            }
+            return res.status !== 401;
         });
         // login and logout area
         while (loginLogoutElement.firstChild) {
@@ -262,6 +256,7 @@ const fileIconMap = {
             uploadBtn.onclick = async () => {
                 uploadBtn.disabled = true;
                 if (uploadFileList.length === 0) {
+                    uploadBtn.disabled = false;
                     return;
                 }
                 const formData = new FormData();

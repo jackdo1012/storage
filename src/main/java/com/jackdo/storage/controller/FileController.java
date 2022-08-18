@@ -75,7 +75,7 @@ public class FileController {
                         .path("/api/file/download/")
                         .path(dbFile.getId().toString())
                         .toUriString();
-                return new ResponseFile(dbFile.getName(), fileDownloadUri, dbFile.getType(), dbFile.getId().toString(), dbFile.getData().length);
+                return new ResponseFile(dbFile.getName(), fileDownloadUri, dbFile.getType(), dbFile.getId().toString());
             }).collect(Collectors.toList());
             return ResponseEntity.status(HttpStatus.OK).body(files);
         }
@@ -89,12 +89,13 @@ public class FileController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
         } else {
             FileEntity file = fileStorageService.getFile(id);
+            byte[] data = fileStorageService.getData(id);
             if (file == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
             } else {
                 return ResponseEntity.ok()
                         .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + file.getName() + "\"")
-                        .body(file.getData());
+                        .body(data);
             }
         }
     }

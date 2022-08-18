@@ -1,7 +1,9 @@
 package com.jackdo.storage.service;
 
+import com.jackdo.storage.entity.DataEntity;
 import com.jackdo.storage.entity.FileEntity;
 import com.jackdo.storage.entity.FolderEntity;
+import com.jackdo.storage.repo.DataRepo;
 import com.jackdo.storage.repo.FileRepo;
 import com.jackdo.storage.repo.FolderRepo;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,11 +18,13 @@ import java.util.*;
 public class FileServiceImpl implements FileService {
     FileRepo fileRepo;
     FolderRepo folderRepo;
+    DataRepo dataRepo;
 
     @Autowired
-    public FileServiceImpl(FileRepo fileRepo, FolderRepo folderRepo) {
+    public FileServiceImpl(FileRepo fileRepo, FolderRepo folderRepo, DataRepo dataRepo) {
         this.fileRepo = fileRepo;
         this.folderRepo = folderRepo;
+        this.dataRepo = dataRepo;
     }
 
     private String getFileName(String initFilename, int initIndex, FolderEntity parentFolder) {
@@ -50,12 +54,15 @@ public class FileServiceImpl implements FileService {
         files.forEach(file -> {
             String fileName = getFileName(StringUtils.cleanPath(Objects.requireNonNull(file.getOriginalFilename())), 0, parentFolder);
             FileEntity fileEntity = null;
+            fileEntity = new FileEntity(fileName, file.getContentType(), parentFolder);
+            FileEntity newFile = fileRepo.save(fileEntity);
             try {
-                fileEntity = new FileEntity(fileName, file.getContentType(), file.getBytes(), parentFolder);
-                returnFiles.add(fileRepo.save(fileEntity));
+                DataEntity dataEntity = new DataEntity(newFile, file.getBytes());
+                dataRepo.save(dataEntity);
             } catch (IOException e) {
                 e.printStackTrace();
             }
+            returnFiles.add(newFile);
         });
         return returnFiles;
     }
@@ -68,5 +75,15 @@ public class FileServiceImpl implements FileService {
     @Override
     public void deleteFile(String id) {
         fileRepo.deleteById(UUID.fromString(id));
+        dataRepo.deleteByFileId(UUID.fromString(id))/**/;
+    }
+
+    @Override
+    public byte[] getData(String id) {
+        DataEntity dataEntity = dataRepo.findByFileId(UUID.fromString(id));
+        if (dataEntity == null) {
+            return null;
+        }
+        return dataEntity.getData();
     }
 }

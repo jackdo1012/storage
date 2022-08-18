@@ -12,4 +12,6 @@ public interface FileService {
     public FileEntity getFile(String id);
 
     public void deleteFile(String id);
+
+    public byte[] getData(String id);
 }

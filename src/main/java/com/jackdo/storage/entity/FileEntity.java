@@ -15,11 +15,6 @@ public class FileEntity {
 
     private String type;
 
-    @Lob
-    @Basic(fetch = FetchType.LAZY)
-    @Column(name = "data")
-    private byte[] data;
-
     @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JoinColumn(name = "folderId")
     private FolderEntity parentFolder;
@@ -27,10 +22,9 @@ public class FileEntity {
     public FileEntity() {
     }
 
-    public FileEntity(String name, String type, byte[] data, FolderEntity parentFolder) {
+    public FileEntity(String name, String type, FolderEntity parentFolder) {
         this.name = name;
         this.type = type;
-        this.data = data;
         this.parentFolder = parentFolder;
     }
 
@@ -52,14 +46,6 @@ public class FileEntity {
 
     public void setType(String type) {
         this.type = type;
-    }
-
-    public byte[] getData() {
-        return data;
-    }
-
-    public void setData(byte[] data) {
-        this.data = data;
     }
 
     public FolderEntity getParentFolder() {
