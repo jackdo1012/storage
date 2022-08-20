@@ -70,11 +70,7 @@ public class FileController {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
             }
             List<ResponseFile> files = this.fileRepo.findAllByParentFolder(parentFolder).stream().map(dbFile -> {
-                String fileDownloadUri = ServletUriComponentsBuilder
-                        .fromCurrentContextPath()
-                        .path("/api/file/download/")
-                        .path(dbFile.getId().toString())
-                        .toUriString();
+                String fileDownloadUri = "/api/file/download/" + dbFile.getId().toString();
                 return new ResponseFile(dbFile.getName(), fileDownloadUri, dbFile.getType(), dbFile.getId().toString());
             }).collect(Collectors.toList());
             return ResponseEntity.status(HttpStatus.OK).body(files);

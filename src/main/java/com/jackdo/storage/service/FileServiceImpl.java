@@ -74,8 +74,8 @@ public class FileServiceImpl implements FileService {
 
     @Override
     public void deleteFile(String id) {
+        dataRepo.deleteByFileId(UUID.fromString(id));
         fileRepo.deleteById(UUID.fromString(id));
-        dataRepo.deleteByFileId(UUID.fromString(id))/**/;
     }
 
     @Override
