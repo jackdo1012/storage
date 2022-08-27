@@ -178,6 +178,23 @@ const fileIconMap = {
                 fileElement.appendChild(fileNameElement);
             }
             {
+                const fileSizeElement = document.createElement("p");
+                let size = file.size;
+                if (size < 1024) {
+                    size += " bytes";
+                } else if (size < Math.pow(1024, 2)) {
+                    size = (size / 1024).toFixed(1) + " KB";
+                } else if (size < Math.pow(1024, 3)) {
+                    size = (size / Math.pow(1024, 2)).toFixed(1) + " MB";
+                } else if (size < Math.pow(1024, 4)) {
+                    size = (size / Math.pow(1024, 3)).toFixed(1) + " GB";
+                } else {
+                    size = (size / Math.pow(1024, 4)).toFixed(1) + " TB";
+                }
+                fileSizeElement.innerHTML = size;
+                fileElement.appendChild(fileSizeElement);
+            }
+            {
                 if (currentMode === "delete") {
                     const overlay = document.createElement("div");
                     overlay.classList.add("overlay");
@@ -335,8 +352,7 @@ const fileIconMap = {
     };
 
     const reload = async () => {
-        authRelateRender();
-        await getFilesAndFolders();
+        await Promise.all([authRelateRender(), getFilesAndFolders()]);
         renderFilesAndFolders();
     };
     await reload();

@@ -1,6 +1,7 @@
 package com.jackdo.storage.service;
 
 import com.jackdo.storage.entity.FolderEntity;
+import com.jackdo.storage.repo.DataRepo;
 import com.jackdo.storage.repo.FileRepo;
 import com.jackdo.storage.repo.FolderRepo;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,11 +13,13 @@ import java.util.UUID;
 public class FolderServiceImpl implements FolderService {
     private final FolderRepo folderRepo;
     private final FileRepo fileRepo;
+    private final DataRepo dataRepo;
 
     @Autowired
-    public FolderServiceImpl(FolderRepo folderRepo, FileRepo fileRepo) {
+    public FolderServiceImpl(FolderRepo folderRepo, FileRepo fileRepo, DataRepo dataRepo) {
         this.folderRepo = folderRepo;
         this.fileRepo = fileRepo;
+        this.dataRepo = dataRepo;
     }
 
     private String getFolderName(String initFolderName, int initIndex, FolderEntity parentFolder) {
@@ -45,6 +48,7 @@ public class FolderServiceImpl implements FolderService {
 
     @Override
     public void deleteFolder(String folderId) {
+        this.dataRepo.deleteAllByFile_ParentFolder(this.folderRepo.findById(UUID.fromString(folderId)).orElse(null));
         this.fileRepo.deleteAllByParentFolder(this.folderRepo.findById(UUID.fromString(folderId)).orElse(null));
         this.folderRepo.deleteById(UUID.fromString(folderId));
     }

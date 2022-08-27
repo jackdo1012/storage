@@ -5,12 +5,14 @@ public class ResponseFile {
     private String url;
     private String type;
     private String id;
+    private long size;
 
-    public ResponseFile(String name, String url, String type, String id) {
+    public ResponseFile(String name, String url, String type, String id, long size) {
         this.name = name;
         this.url = url;
         this.type = type;
         this.id = id;
+        this.size = size;
     }
 
     public String getName() {
@@ -37,6 +39,14 @@ public class ResponseFile {
         this.type = type;
     }
 
+    public long getSize() {
+        return size;
+    }
+
+    public void setSize(long size) {
+        this.size = size;
+    }
+
     public String getId() {
         return id;
     }
@@ -45,4 +55,3 @@ public class ResponseFile {
         this.id = id;
     }
 }
-

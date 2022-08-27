@@ -1,6 +1,7 @@
 package com.jackdo.storage.repo;
 
 import com.jackdo.storage.entity.DataEntity;
+import com.jackdo.storage.entity.FolderEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -19,4 +20,8 @@ public interface DataRepo extends JpaRepository<DataEntity, String> {
     @Transactional
     @Query("select d from DataEntity d where d.file.id = ?1")
     public DataEntity findByFileId(UUID fileId);
+
+    @Transactional
+    @Modifying
+    public void deleteAllByFile_ParentFolder(FolderEntity parentFolder);
 }

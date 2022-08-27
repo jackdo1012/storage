@@ -13,8 +13,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.sql.SQLException;
@@ -38,7 +36,7 @@ public class FileController {
 
     @PostMapping("/{folderId}")
     public ResponseEntity<ResponseMessage> uploadFile(@RequestParam("files") List<MultipartFile> files,
-                                                      HttpServletRequest req, @PathVariable String folderId) {
+            HttpServletRequest req, @PathVariable String folderId) {
         boolean auth = (boolean) req.getAttribute("auth");
         if (!auth) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
@@ -71,7 +69,9 @@ public class FileController {
             }
             List<ResponseFile> files = this.fileRepo.findAllByParentFolder(parentFolder).stream().map(dbFile -> {
                 String fileDownloadUri = "/api/file/download/" + dbFile.getId().toString();
-                return new ResponseFile(dbFile.getName(), fileDownloadUri, dbFile.getType(), dbFile.getId().toString());
+                byte[] data = this.fileStorageService.getData(dbFile.getId().toString());
+                return new ResponseFile(dbFile.getName(), fileDownloadUri, dbFile.getType(), dbFile.getId().toString(),
+                        data.length);
             }).collect(Collectors.toList());
             return ResponseEntity.status(HttpStatus.OK).body(files);
         }
