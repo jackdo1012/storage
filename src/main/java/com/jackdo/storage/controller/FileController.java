@@ -13,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.sql.SQLException;
@@ -36,7 +37,7 @@ public class FileController {
 
     @PostMapping("/{folderId}")
     public ResponseEntity<ResponseMessage> uploadFile(@RequestParam("files") List<MultipartFile> files,
-            HttpServletRequest req, @PathVariable String folderId) {
+                                                      HttpServletRequest req, @PathVariable String folderId) {
         boolean auth = (boolean) req.getAttribute("auth");
         if (!auth) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);

@@ -12,27 +12,36 @@
     font-family: "Roboto", sans-serif;
 }
 
-.change-mode {
-    user-select: none;
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    -khtml-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    width: fit-content;
-    padding: 5px;
-    font-size: 1.1rem;
-    cursor: pointer;
-}
-
 .upload .upload-button {
     padding: 5px;
     font-size: 1.05rem;
     background-color: transparent;
     border: 2px solid #ccc;
     border-radius: 5px;
+}
+
+.upload .new-btn {
+    cursor: pointer;
+    width: fit-content;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
+
+.upload .new-btn .material-icons {
+    transform: rotate(0deg);
+    transition: transform 0.25s ease-in-out;
+}
+
+.upload .new-btn.opened .material-icons {
+    transform: rotate(180deg);
 }
 
 .files {
@@ -67,11 +76,6 @@
     border: 1.5px solid #ccc;
     border-radius: 5px;
     cursor: pointer;
-    transition: all 0.1s ease-in-out;
-}
-
-.files .file:hover {
-    transform: scale(1.1);
 }
 
 .files .file img {
@@ -123,4 +127,30 @@
     -khtml-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
+}
+
+.right-click {
+    display: none;
+    position: absolute;
+    text-align: center;
+    background: white;
+    border: 1px solid black;
+}
+
+.right-click ul {
+    padding: 0px;
+    margin: 0px;
+    min-width: 150px;
+    list-style: none;
+}
+
+.right-click ul li {
+    padding-bottom: 7px;
+    padding-top: 7px;
+    border: 1px solid black;
+    cursor: pointer;
+}
+
+.right-click ul li:hover {
+    background-color: lightgray;
 }

@@ -24,9 +24,24 @@ const uploadContainer = document.querySelector(".upload");
 const loginLogoutElement = document.querySelector(".loginLogout");
 const changeModeElement = document.querySelector(".change-mode");
 const backButton = document.querySelector(".back-btn");
-let currentMode = "view";
+const rightClickContainer = document.createElement("div");
+const rightClickUl = document.createElement("ul");
+const renameBtn = document.createElement("li");
+const deleteBtn = document.createElement("li");
 let files = [];
 let folders = [];
+
+renameBtn.innerHTML = "Rename";
+deleteBtn.innerHTML = "Delete";
+// rightClickUl.appendChild(renameBtn);
+rightClickUl.appendChild(deleteBtn);
+rightClickContainer.appendChild(rightClickUl);
+rightClickContainer.classList.add("right-click");
+app.appendChild(rightClickContainer);
+
+document.onclick = () => {
+    rightClickContainer.style.display = "none";
+};
 
 const fileIconMap = {
     "7z": "7zip",
@@ -67,6 +82,7 @@ const fileIconMap = {
 };
 (async () => {
     const folderPath = new Stack();
+
     folderPath.push(
         await fetch(`/api/folder/root`, {
             credentials: "include",
@@ -83,6 +99,20 @@ const fileIconMap = {
         folderPath.pop();
         await getFilesAndFolders();
         renderFilesAndFolders();
+    };
+
+    const deleteFileOrFolder = async (type, id) => {
+        if (type === "folder") {
+            await fetch(`/api/folder/${id}`, {
+                credentials: "include",
+                method: "DELETE",
+            });
+        } else if (type === "file") {
+            await fetch(`/api/file/${id}`, {
+                credentials: "include",
+                method: "DELETE",
+            });
+        }
     };
 
     const getFilesAndFolders = async () => {
@@ -113,18 +143,9 @@ const fileIconMap = {
             const folderElement = document.createElement("div");
             folderElement.classList.add("file");
             folderElement.onclick = async () => {
-                if (currentMode === "view") {
-                    folderPath.push(folder);
-                    await getFilesAndFolders();
-                    renderFilesAndFolders();
-                } else {
-                    await fetch(`/api/folder/${folder.id}`, {
-                        credentials: "include",
-                        method: "DELETE",
-                    });
-                    await getFilesAndFolders();
-                    renderFilesAndFolders();
-                }
+                folderPath.push(folder);
+                await getFilesAndFolders();
+                renderFilesAndFolders();
             };
             {
                 const imageElement = document.createElement("img");
@@ -136,16 +157,18 @@ const fileIconMap = {
                 fileNameElement.innerHTML = folder.name;
                 folderElement.appendChild(fileNameElement);
             }
-            {
-                if (currentMode === "delete") {
-                    const overlay = document.createElement("div");
-                    overlay.classList.add("overlay");
-                    const deleteBtn = materialIcon("delete");
-                    deleteBtn.classList.add("delete-btn");
-                    folderElement.appendChild(overlay);
-                    folderElement.appendChild(deleteBtn);
-                }
-            }
+            folderElement.oncontextmenu = function (e) {
+                e.preventDefault();
+                rightClickContainer.style.display = "block";
+                rightClickContainer.style.left = Number(e.pageX) + 1 + "px";
+                rightClickContainer.style.top = Number(e.pageY) + 1 + "px";
+
+                deleteBtn.onclick = async () => {
+                    await deleteFileOrFolder("folder", folder.id);
+                    await getFilesAndFolders();
+                    renderFilesAndFolders();
+                };
+            };
             filesElement.appendChild(folderElement);
         });
         files.forEach((file) => {
@@ -155,17 +178,7 @@ const fileIconMap = {
             const fileElement = document.createElement("div");
             fileElement.classList.add("file");
             fileElement.onclick = async () => {
-                if (currentMode === "view") {
-                    window.open(file.url, "_blank");
-                } else {
-                    console.log(file);
-                    await fetch(`/api/file/${file.id}`, {
-                        credentials: "include",
-                        method: "DELETE",
-                    });
-                    await getFilesAndFolders();
-                    renderFilesAndFolders();
-                }
+                window.open(file.url, "_blank");
             };
             {
                 const imageElement = document.createElement("img");
@@ -194,16 +207,18 @@ const fileIconMap = {
                 fileSizeElement.innerHTML = size;
                 fileElement.appendChild(fileSizeElement);
             }
-            {
-                if (currentMode === "delete") {
-                    const overlay = document.createElement("div");
-                    overlay.classList.add("overlay");
-                    const deleteBtn = materialIcon("delete");
-                    deleteBtn.classList.add("delete-btn");
-                    fileElement.appendChild(overlay);
-                    fileElement.appendChild(deleteBtn);
-                }
-            }
+            fileElement.oncontextmenu = function (e) {
+                e.preventDefault();
+                rightClickContainer.style.display = "block";
+                rightClickContainer.style.left = Number(e.pageX) + 1 + "px";
+                rightClickContainer.style.top = Number(e.pageY) + 1 + "px";
+
+                deleteBtn.onclick = async () => {
+                    await deleteFileOrFolder("file", file.id);
+                    await getFilesAndFolders();
+                    renderFilesAndFolders();
+                };
+            };
             filesElement.appendChild(fileElement);
         });
     };
@@ -257,6 +272,20 @@ const fileIconMap = {
             uploadContainer.removeChild(uploadContainer.firstChild);
         }
         if (auth) {
+            const newButton = document.createElement("div");
+            newButton.classList.add("new-btn");
+            const downIcon = materialIcon("expand_more");
+            newButton.innerHTML = "New";
+            newButton.appendChild(downIcon);
+            newButton.onclick = function () {
+                if (newButton.classList.contains("opened")) {
+                    newButton.classList.remove("opened");
+                } else {
+                    newButton.classList.add("opened");
+                }
+            };
+            uploadContainer.appendChild(newButton);
+
             let uploadFileList = [];
             const uploadFileDiv = document.createElement("div");
             const uploadFile = document.createElement("input");
@@ -321,33 +350,6 @@ const fileIconMap = {
 
             uploadContainer.appendChild(newFolderDiv);
             uploadContainer.appendChild(uploadFileDiv);
-        }
-
-        // change view or delete mode
-        while (changeModeElement.firstChild) {
-            changeModeElement.removeChild(changeModeElement.firstChild);
-        }
-        if (auth) {
-            changeModeElement.style.display = "block";
-            changeModeElement.style.visibility = "visible";
-            changeModeElement.appendChild(materialIcon("file_download"));
-            changeModeElement.onclick = () => {
-                currentMode = currentMode === "delete" ? "view" : "delete";
-                while (changeModeElement.firstChild) {
-                    changeModeElement.removeChild(changeModeElement.firstChild);
-                }
-                if (currentMode === "view") {
-                    changeModeElement.appendChild(
-                        materialIcon("file_download"),
-                    );
-                } else {
-                    changeModeElement.appendChild(materialIcon("delete"));
-                }
-                renderFilesAndFolders();
-            };
-        } else {
-            changeModeElement.style.display = "none";
-            changeModeElement.style.visibility = "hidden";
         }
     };
 
