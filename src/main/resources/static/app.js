@@ -33,7 +33,7 @@ let folders = [];
 
 renameBtn.innerHTML = "Rename";
 deleteBtn.innerHTML = "Delete";
-// rightClickUl.appendChild(renameBtn);
+rightClickUl.appendChild(renameBtn);
 rightClickUl.appendChild(deleteBtn);
 rightClickContainer.appendChild(rightClickUl);
 rightClickContainer.classList.add("right-click");
@@ -115,6 +115,20 @@ const fileIconMap = {
         }
     };
 
+    const renameFileOrFolder = async (type, id, name) => {
+        if (type === "folder") {
+            await fetch(`/api/folder/rename/${id}?name=${name}`, {
+                credentials: "include",
+                method: "PUT",
+            });
+        } else if (type === "file") {
+            await fetch(`/api/file/rename/${id}?name=${name}`, {
+                credentials: "include",
+                method: "PUT",
+            });
+        }
+    };
+
     const getFilesAndFolders = async () => {
         files = await fetch(`/api/file/${folderPath.peek().id}`, {
             credentials: "include",
@@ -133,6 +147,7 @@ const fileIconMap = {
             return res.json();
         });
     };
+
     const renderFilesAndFolders = () => {
         backButton.disabled = folderPath.length() <= 1;
         while (filesElement.firstChild) {
@@ -162,6 +177,43 @@ const fileIconMap = {
                 rightClickContainer.style.display = "block";
                 rightClickContainer.style.left = Number(e.pageX) + 1 + "px";
                 rightClickContainer.style.top = Number(e.pageY) + 1 + "px";
+
+                renameBtn.onclick = async () => {
+                    // create modal
+                    let newName = folder.name;
+                    const renameModal = document.createElement("div");
+                    renameModal.classList.add("rename-modal");
+                    const renameInput = document.createElement("input");
+                    renameInput.value = newName;
+                    renameInput.onchange = (e) => {
+                        newName = e.target.value;
+                        renameInput.value = e.target.value;
+                    };
+                    renameInput.placeholder = "New name";
+                    renameInput.onclick = (e) => {
+                        e.stopPropagation();
+                    };
+                    const renameBtn = document.createElement("button");
+                    renameBtn.innerHTML = "Rename";
+
+                    const close = () => {
+                        renameBtn.removeEventListener("click", rename);
+                        app.removeChild(renameModal);
+                    };
+
+                    const rename = async (e) => {
+                        e.stopPropagation();
+                        await renameFileOrFolder("folder", folder.id, newName);
+                        await getFilesAndFolders();
+                        renderFilesAndFolders();
+                        close();
+                    };
+                    renameBtn.addEventListener("click", rename);
+                    renameModal.appendChild(renameInput);
+                    renameModal.appendChild(renameBtn);
+                    app.appendChild(renameModal);
+                    renameModal.onclick = close;
+                };
 
                 deleteBtn.onclick = async () => {
                     await deleteFileOrFolder("folder", folder.id);
@@ -213,6 +265,43 @@ const fileIconMap = {
                 rightClickContainer.style.left = Number(e.pageX) + 1 + "px";
                 rightClickContainer.style.top = Number(e.pageY) + 1 + "px";
 
+                renameBtn.onclick = async () => {
+                    // create modal
+                    let newName = file.name;
+                    const renameModal = document.createElement("div");
+                    renameModal.classList.add("rename-modal");
+                    const renameInput = document.createElement("input");
+                    renameInput.value = newName;
+                    renameInput.onchange = (e) => {
+                        newName = e.target.value;
+                        renameInput.value = e.target.value;
+                    };
+                    renameInput.placeholder = "New name";
+                    renameInput.onclick = (e) => {
+                        e.stopPropagation();
+                    };
+                    const renameBtn = document.createElement("button");
+                    renameBtn.innerHTML = "Rename";
+
+                    const close = () => {
+                        renameBtn.removeEventListener("click", rename);
+                        app.removeChild(renameModal);
+                    };
+
+                    const rename = async (e) => {
+                        e.stopPropagation();
+                        await renameFileOrFolder("file", file.id, newName);
+                        await getFilesAndFolders();
+                        renderFilesAndFolders();
+                        close();
+                    };
+                    renameBtn.addEventListener("click", rename);
+                    renameModal.appendChild(renameInput);
+                    renameModal.appendChild(renameBtn);
+                    app.appendChild(renameModal);
+                    renameModal.onclick = close;
+                };
+
                 deleteBtn.onclick = async () => {
                     await deleteFileOrFolder("file", file.id);
                     await getFilesAndFolders();
@@ -234,6 +323,8 @@ const fileIconMap = {
         }
         switch (auth) {
             case true: {
+                loginLogoutElement.style.height = "fit-content";
+                document.querySelector(".back-btn").style.display = "block";
                 const logOutButton = document.createElement("button");
                 logOutButton.classList.add("logout-btn");
                 logOutButton.innerHTML = "Logout";
@@ -245,6 +336,8 @@ const fileIconMap = {
                 break;
             }
             case false: {
+                loginLogoutElement.style.height = "100vh";
+                document.querySelector(".back-btn").style.display = "none";
                 const label = document.createElement("label");
                 label.innerHTML = "Password";
                 label.htmlFor = "loginPassword";
@@ -267,7 +360,7 @@ const fileIconMap = {
                 break;
             }
         }
-        // upload file area
+        // upload file
         while (uploadContainer.firstChild) {
             uploadContainer.removeChild(uploadContainer.firstChild);
         }

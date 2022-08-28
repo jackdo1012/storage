@@ -14,4 +14,6 @@ public interface FileService {
     public void deleteFile(String id);
 
     public byte[] getData(String id);
+
+    public void rename(String id, String name);
 }

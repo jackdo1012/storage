@@ -47,4 +47,9 @@ public interface FolderRepo extends JpaRepository<FolderEntity, String> {
     @Transactional
     @Query("select f from FolderEntity f where f.name = ?1 and f.parentFolder = ?2")
     public FolderEntity findByNameAndParentFolder(String name, FolderEntity parentFolder);
+
+    @Transactional
+    @Modifying
+    @Query("update FolderEntity f set f.name = ?2 where f.id = ?1")
+    public void updateNameById(UUID id, String name);
 }

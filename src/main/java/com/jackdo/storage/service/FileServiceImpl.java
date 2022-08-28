@@ -86,4 +86,13 @@ public class FileServiceImpl implements FileService {
         }
         return dataEntity.getData();
     }
+
+    @Override
+    public void rename(String id, String name) {
+        FileEntity file = this.fileRepo.findById(UUID.fromString(id)).orElse(null);
+        if (file != null) {
+            String filename = this.getFileName(name, 0, file.getParentFolder());
+            this.fileRepo.updateNameById(UUID.fromString(id), filename);
+        }
+    }
 }

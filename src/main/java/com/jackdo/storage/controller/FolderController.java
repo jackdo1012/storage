@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.UUID;
 
@@ -58,5 +59,17 @@ public class FolderController {
         }
         this.folderService.deleteFolder(folderId);
         return ResponseEntity.ok().body(null);
+    }
+
+    @PutMapping("/rename/{id}")
+    public ResponseEntity<Object> renameFolder(@PathVariable String id, HttpServletRequest req,
+            @RequestParam("name") String name) {
+        boolean auth = (boolean) req.getAttribute("auth");
+        if (!auth) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+        } else {
+            this.folderService.rename(id, name);
+            return ResponseEntity.ok().body(null);
+        }
     }
 }

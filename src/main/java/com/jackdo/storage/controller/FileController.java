@@ -37,7 +37,7 @@ public class FileController {
 
     @PostMapping("/{folderId}")
     public ResponseEntity<ResponseMessage> uploadFile(@RequestParam("files") List<MultipartFile> files,
-                                                      HttpServletRequest req, @PathVariable String folderId) {
+            HttpServletRequest req, @PathVariable String folderId) {
         boolean auth = (boolean) req.getAttribute("auth");
         if (!auth) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
@@ -94,6 +94,18 @@ public class FileController {
                         .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + file.getName() + "\"")
                         .body(data);
             }
+        }
+    }
+
+    @PutMapping("/rename/{id}")
+    public ResponseEntity<Object> renameFile(@PathVariable String id, HttpServletRequest req,
+            @RequestParam("name") String name) {
+        boolean auth = (boolean) req.getAttribute("auth");
+        if (!auth) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+        } else {
+            this.fileStorageService.rename(id, name);
+            return ResponseEntity.ok().body(null);
         }
     }
 

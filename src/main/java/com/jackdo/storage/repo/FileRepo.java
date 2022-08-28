@@ -40,7 +40,17 @@ public interface FileRepo extends JpaRepository<FileEntity, String> {
     public FileEntity findByNameAndParentFolder(String name, FolderEntity parentFolder);
 
     @Transactional
+    @Query("select (count(f) > 0) from FileEntity f where f.id = ?1")
+    public boolean existsById(UUID id);
+
+    @Transactional
+    @Modifying
+    @Query("update FileEntity f set f.name = ?2 where f.id = ?1")
+    public void updateNameById(UUID id, String name);
+
+    @Transactional
     @Modifying
     @Query("delete from FileEntity f where f.parentFolder = ?1")
     public void deleteAllByParentFolder(FolderEntity parentFolder);
+
 }

@@ -52,4 +52,13 @@ public class FolderServiceImpl implements FolderService {
         this.fileRepo.deleteAllByParentFolder(this.folderRepo.findById(UUID.fromString(folderId)).orElse(null));
         this.folderRepo.deleteById(UUID.fromString(folderId));
     }
+
+    @Override
+    public void rename(String id, String name) {
+        FolderEntity folder = this.folderRepo.findById(UUID.fromString(id)).orElse(null);
+        if (folder != null) {
+            String folderName = this.getFolderName(name, 0, folder.getParentFolder());
+            this.folderRepo.updateNameById(UUID.fromString(id), folderName);
+        }
+    }
 }
